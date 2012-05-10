@@ -23,628 +23,642 @@ unsigned char message[BUFSIZE + 1];
 
 /* function declaration */
 
-int tsh_get_file( int server, char *argv3, char *argv4 );
-int tsh_put_file( int server, char *argv3, char *argv4 );
-int tsh_runshell( int server, char *argv2 );
+int tsh_get_file (int server, char *argv3, char *argv4);
+int tsh_put_file (int server, char *argv3, char *argv4);
+int tsh_runshell (int server, char *argv2);
 
-void pel_error( char *s );
+void pel_error (char *s);
 
 /* program entry point */
 
-int main( int argc, char *argv[] )
+int
+main (int argc, char *argv[])
 {
-    int ret, client, server, n;
-    struct sockaddr_in server_addr;
-    struct sockaddr_in client_addr;
-    struct hostent *server_host;
-    char action, *password;
+  int ret, client, server, n;
+  struct sockaddr_in server_addr;
+  struct sockaddr_in client_addr;
+  struct hostent *server_host;
+  char action, *password;
 
-    action = 0;
+  action = 0;
 
-    password = NULL;
+  password = NULL;
 
-    /* check the arguments */
+  /* check the arguments */
 
-    if( argc == 5 && ! strcmp( argv[2], "get" ) )
+  if (argc == 5 && !strcmp (argv[2], "get"))
     {
-        action = GET_FILE;
+      action = GET_FILE;
     }
 
-    if( argc == 5 && ! strcmp( argv[2], "put" ) )
+  if (argc == 5 && !strcmp (argv[2], "put"))
     {
-        action = PUT_FILE;
+      action = PUT_FILE;
     }
 
-    if( argc == 2 || argc == 3 )
+  if (argc == 2 || argc == 3)
     {
-        action = RUNSHELL;
+      action = RUNSHELL;
     }
 
-    if( action == 0 ) return( 1 );
+  if (action == 0)
+    return (1);
 
 connect:
 
-    if( strcmp( argv[1], "cb" ) != 0 )
+  if (strcmp (argv[1], "cb") != 0)
     {
-        /* create a socket */
+      /* create a socket */
 
-        server = socket( AF_INET, SOCK_STREAM, 0 );
+      server = socket (AF_INET, SOCK_STREAM, 0);
 
-        if( server < 0 )
-        {
-            perror( "socket" );
-            return( 2 );
-        }
+      if (server < 0)
+	{
+	  perror ("socket");
+	  return (2);
+	}
 
-        /* resolve the server hostname */
+      /* resolve the server hostname */
 
-        server_host = gethostbyname( argv[1] );
+      server_host = gethostbyname (argv[1]);
 
-        if( server_host == NULL )
-        {
-            fprintf( stderr, "gethostbyname failed.\n" );
-            return( 3 );
-        }
+      if (server_host == NULL)
+	{
+	  fprintf (stderr, "gethostbyname failed.\n");
+	  return (3);
+	}
 
-        memcpy( (void *) &server_addr.sin_addr,
-                (void *) server_host->h_addr,
-                server_host->h_length );
+      memcpy ((void *) &server_addr.sin_addr,
+	      (void *) server_host->h_addr, server_host->h_length);
 
-        server_addr.sin_family = AF_INET;
-        server_addr.sin_port   = htons( SERVER_PORT );
+      server_addr.sin_family = AF_INET;
+      server_addr.sin_port = htons (SERVER_PORT);
 
-        /* connect to the remote host */
+      /* connect to the remote host */
 
-        ret = connect( server, (struct sockaddr *) &server_addr,
-                       sizeof( server_addr ) );
+      ret = connect (server, (struct sockaddr *) &server_addr,
+		     sizeof (server_addr));
 
-        if( ret < 0 )
-        {
-            perror( "connect" );
-            return( 4 );
-        }
+      if (ret < 0)
+	{
+	  perror ("connect");
+	  return (4);
+	}
     }
-    else
+  else
     {
-        /* create a socket */
+      /* create a socket */
 
-        client = socket( AF_INET, SOCK_STREAM, 0 );
+      client = socket (AF_INET, SOCK_STREAM, 0);
 
-        if( client < 0 )
-        {
-            perror( "socket" );
-            return( 5 );
-        }
+      if (client < 0)
+	{
+	  perror ("socket");
+	  return (5);
+	}
 
-        /* bind the client on the port the server will connect to */
+      /* bind the client on the port the server will connect to */
 
-        n = 1;
+      n = 1;
 
-        ret = setsockopt( client, SOL_SOCKET, SO_REUSEADDR,
-                          (void *) &n, sizeof( n ) );
+      ret = setsockopt (client, SOL_SOCKET, SO_REUSEADDR,
+			(void *) &n, sizeof (n));
 
-        if( ret < 0 )
-        {
-            perror( "setsockopt" );
-            return( 6 );
-        }
+      if (ret < 0)
+	{
+	  perror ("setsockopt");
+	  return (6);
+	}
 
-        client_addr.sin_family      = AF_INET;
-        client_addr.sin_port        = htons( SERVER_PORT );
-        client_addr.sin_addr.s_addr = INADDR_ANY;
+      client_addr.sin_family = AF_INET;
+      client_addr.sin_port = htons (SERVER_PORT);
+      client_addr.sin_addr.s_addr = INADDR_ANY;
 
-        ret = bind( client, (struct sockaddr *) &client_addr,
-                    sizeof( client_addr ) );
+      ret = bind (client, (struct sockaddr *) &client_addr,
+		  sizeof (client_addr));
 
-        if( ret < 0 )
-        {
-            perror( "bind" );
-            return( 7 );
-        }
+      if (ret < 0)
+	{
+	  perror ("bind");
+	  return (7);
+	}
 
-        if( listen( client, 5 ) < 0 )
-        {
-            perror( "listen" );
-            return( 8 );
-        }
+      if (listen (client, 5) < 0)
+	{
+	  perror ("listen");
+	  return (8);
+	}
 
-        fprintf( stderr, "Waiting for the server to connect..." );
-        fflush( stderr );
+      fprintf (stderr, "Waiting for the server to connect...");
+      fflush (stderr);
 
-        n = sizeof( server_addr );
+      n = sizeof (server_addr);
 
-        server = accept( client, (struct sockaddr *)
-                         &server_addr, &n );
+      server = accept (client, (struct sockaddr *) &server_addr, &n);
 
-        if( server < 0 )
-        {
-            perror( "accept" );
-            return( 9 );
-        }
+      if (server < 0)
+	{
+	  perror ("accept");
+	  return (9);
+	}
 
-        fprintf( stderr, "connected.\n" );
+      fprintf (stderr, "connected.\n");
 
-        close( client );
+      close (client);
     }
 
-    /* setup the packet encryption layer */
+  /* setup the packet encryption layer */
 
-    if( password == NULL )
+  if (password == NULL)
     {
-        /* 1st try, using the built-in secret key */
+      /* 1st try, using the built-in secret key */
 
-        ret = pel_client_init( server, secret );
+      ret = pel_client_init (server, secret);
 
-        if( ret != PEL_SUCCESS )
-        {
-            close( server );
+      if (ret != PEL_SUCCESS)
+	{
+	  close (server);
 
-            /* secret key invalid, so ask for a password */
+	  /* secret key invalid, so ask for a password */
 
-            password = getpass( "Password: " );
-            goto connect;
-        }
+	  password = getpass ("Password: ");
+	  goto connect;
+	}
     }
-    else
+  else
     {
-        /* 2nd try, with the user's password */
+      /* 2nd try, with the user's password */
 
-        ret = pel_client_init( server, password );
+      ret = pel_client_init (server, password);
 
-        memset( password, 0, strlen( password ) );
+      memset (password, 0, strlen (password));
 
-        if( ret != PEL_SUCCESS )
-        {
-            /* password invalid, exit */
+      if (ret != PEL_SUCCESS)
+	{
+	  /* password invalid, exit */
 
-            fprintf( stderr, "Authentication failed.\n" );
-            shutdown( server, 2 );
-            return( 10 );
-        }
+	  fprintf (stderr, "Authentication failed.\n");
+	  shutdown (server, 2);
+	  return (10);
+	}
 
     }
 
-    /* send the action requested by the user */
+  /* send the action requested by the user */
 
-    ret = pel_send_msg( server, (unsigned char *) &action, 1 );
+  ret = pel_send_msg (server, (unsigned char *) &action, 1);
 
-    if( ret != PEL_SUCCESS )
+  if (ret != PEL_SUCCESS)
     {
-        pel_error( "pel_send_msg" );
-        shutdown( server, 2 );
-        return( 11 );
+      pel_error ("pel_send_msg");
+      shutdown (server, 2);
+      return (11);
     }
 
-    /* howdy */
+  /* howdy */
 
-    switch( action )
+  switch (action)
     {
-        case GET_FILE:
+    case GET_FILE:
 
-            ret = tsh_get_file( server, argv[3], argv[4] );
-            break;
+      ret = tsh_get_file (server, argv[3], argv[4]);
+      break;
 
-        case PUT_FILE:
+    case PUT_FILE:
 
-            ret = tsh_put_file( server, argv[3], argv[4] );
-            break;
+      ret = tsh_put_file (server, argv[3], argv[4]);
+      break;
 
-        case RUNSHELL:
+    case RUNSHELL:
 
-            ret = ( ( argc == 3 )
-                ? tsh_runshell( server, argv[2] )
-                : tsh_runshell( server, "exec bash --login" ) );
-            break;
+      ret = ((argc == 3)
+	     ? tsh_runshell (server, argv[2])
+	     : tsh_runshell (server, "exec bash --login"));
+      break;
 
-        default:
+    default:
 
-            ret = -1;
-            break;
+      ret = -1;
+      break;
     }
 
-    shutdown( server, 2 );
+  shutdown (server, 2);
 
-    return( ret );
+  return (ret);
 }
 
-int tsh_get_file( int server, char *argv3, char *argv4 )
+int
+tsh_get_file (int server, char *argv3, char *argv4)
 {
-    char *temp, *pathname;
-    int ret, len, fd, total;
+  char *temp, *pathname;
+  int ret, len, fd, total;
 
-    /* send remote filename */
+  /* send remote filename */
 
-    len = strlen( argv3 );
+  len = strlen (argv3);
 
-    ret = pel_send_msg( server, (unsigned char *) argv3, len );
+  ret = pel_send_msg (server, (unsigned char *) argv3, len);
 
-    if( ret != PEL_SUCCESS )
+  if (ret != PEL_SUCCESS)
     {
-        pel_error( "pel_send_msg" );
-        return( 12 );
+      pel_error ("pel_send_msg");
+      return (12);
     }
 
-    /* create local file */
+  /* create local file */
 
-    temp = strrchr( argv3, '/' );
+  temp = strrchr (argv3, '/');
 
-    if( temp != NULL ) temp++;
-    if( temp == NULL ) temp = argv3;
+  if (temp != NULL)
+    temp++;
+  if (temp == NULL)
+    temp = argv3;
 
-    len = strlen( argv4 );
+  len = strlen (argv4);
 
-    pathname = (char *) malloc( len + strlen( temp ) + 2 );
+  pathname = (char *) malloc (len + strlen (temp) + 2);
 
-    if( pathname == NULL )
+  if (pathname == NULL)
     {
-        perror( "malloc" );
-        return( 13 );
+      perror ("malloc");
+      return (13);
     }
 
-    strcpy( pathname, argv4 );
-    strcpy( pathname + len, "/" );
-    strcpy( pathname + len + 1, temp );
+  strcpy (pathname, argv4);
+  strcpy (pathname + len, "/");
+  strcpy (pathname + len + 1, temp);
 
-    fd = creat( pathname, 0644 );
+  fd = creat (pathname, 0644);
 
-    if( fd < 0 )
+  if (fd < 0)
     {
-        perror( "creat" );
-        return( 14 );
+      perror ("creat");
+      return (14);
     }
 
-    free( pathname );
+  free (pathname);
 
-    /* transfer from server */
+  /* transfer from server */
 
-    total = 0;
+  total = 0;
 
-    while( 1 )
+  while (1)
     {
-        ret = pel_recv_msg( server, message, &len );
+      ret = pel_recv_msg (server, message, &len);
 
-        if( ret != PEL_SUCCESS )
-        {
-            if( pel_errno == PEL_CONN_CLOSED && total > 0 )
-            {
-                break;
-            }
+      if (ret != PEL_SUCCESS)
+	{
+	  if (pel_errno == PEL_CONN_CLOSED && total > 0)
+	    {
+	      break;
+	    }
 
-            pel_error( "pel_recv_msg" );
-            fprintf( stderr, "Transfer failed.\n" );
-            return( 15 );
-        }
+	  pel_error ("pel_recv_msg");
+	  fprintf (stderr, "Transfer failed.\n");
+	  return (15);
+	}
 
-        if( write( fd, message, len ) != len )
-        {
-            perror( "write" );
-            return( 16 );
-        }
+      if (write (fd, message, len) != len)
+	{
+	  perror ("write");
+	  return (16);
+	}
 
-        total += len;
+      total += len;
 
-        printf( "%d\r", total );
-        fflush( stdout );
+      printf ("%d\r", total);
+      fflush (stdout);
     }
 
-    printf( "%d done.\n", total );
+  printf ("%d done.\n", total);
 
-    return( 0 );
+  return (0);
 }
 
-int tsh_put_file( int server, char *argv3, char *argv4 )
+int
+tsh_put_file (int server, char *argv3, char *argv4)
 {
-    char *temp, *pathname;
-    int ret, len, fd, total;
+  char *temp, *pathname;
+  int ret, len, fd, total;
 
-    /* send remote filename */
+  /* send remote filename */
 
-    temp = strrchr( argv3, '/' );
+  temp = strrchr (argv3, '/');
 
-    if( temp != NULL ) temp++;
-    if( temp == NULL ) temp = argv3;
+  if (temp != NULL)
+    temp++;
+  if (temp == NULL)
+    temp = argv3;
 
-    len = strlen( argv4 );
+  len = strlen (argv4);
 
-    pathname = (char *) malloc( len + strlen( temp ) + 2 );
+  pathname = (char *) malloc (len + strlen (temp) + 2);
 
-    if( pathname == NULL )
+  if (pathname == NULL)
     {
-        perror( "malloc" );
-        return( 17 );
+      perror ("malloc");
+      return (17);
     }
 
-    strcpy( pathname, argv4 );
-    strcpy( pathname + len, "/" );
-    strcpy( pathname + len + 1, temp );
+  strcpy (pathname, argv4);
+  strcpy (pathname + len, "/");
+  strcpy (pathname + len + 1, temp);
 
-    len = strlen( pathname );
+  len = strlen (pathname);
 
-    ret = pel_send_msg( server, (unsigned char *) pathname, len );
+  ret = pel_send_msg (server, (unsigned char *) pathname, len);
 
-    if( ret != PEL_SUCCESS )
+  if (ret != PEL_SUCCESS)
     {
-        pel_error( "pel_send_msg" );
-        return( 18 );
+      pel_error ("pel_send_msg");
+      return (18);
     }
 
-    free( pathname );
+  free (pathname);
 
-    /* open local file */
+  /* open local file */
 
-    fd = open( argv3, O_RDONLY );
+  fd = open (argv3, O_RDONLY);
 
-    if( fd < 0 )
+  if (fd < 0)
     {
-        perror( "open" );
-        return( 19 );
+      perror ("open");
+      return (19);
     }
 
-    /* transfer to server */
+  /* transfer to server */
 
-    total = 0;
+  total = 0;
 
-    while( 1 )
+  while (1)
     {
-        len = read( fd, message, BUFSIZE );
+      len = read (fd, message, BUFSIZE);
 
-        if( len < 0 )
-        {
-            perror( "read" );
-            return( 20 );
-        }
+      if (len < 0)
+	{
+	  perror ("read");
+	  return (20);
+	}
 
-        if( len == 0 )
-        {
-            break;
-        }
+      if (len == 0)
+	{
+	  break;
+	}
 
-        ret = pel_send_msg( server, message, len );
+      ret = pel_send_msg (server, message, len);
 
-        if( ret != PEL_SUCCESS )
-        {
-            pel_error( "pel_send_msg" );
-            fprintf( stderr, "Transfer failed.\n" );
-            return( 21 );
-        }
+      if (ret != PEL_SUCCESS)
+	{
+	  pel_error ("pel_send_msg");
+	  fprintf (stderr, "Transfer failed.\n");
+	  return (21);
+	}
 
-        total += len;
+      total += len;
 
-        printf( "%d\r", total );
-        fflush( stdout );
+      printf ("%d\r", total);
+      fflush (stdout);
     }
 
-    printf( "%d done.\n", total );
+  printf ("%d done.\n", total);
 
-    return( 0 );
+  return (0);
 }
 
-int tsh_runshell( int server, char *argv2 )
+int
+tsh_runshell (int server, char *argv2)
 {
-    fd_set rd;
-    char *term;
-    int ret, len, imf;
-    struct winsize ws;
-    struct termios tp, tr;
+  fd_set rd;
+  char *term;
+  int ret, len, imf;
+  struct winsize ws;
+  struct termios tp, tr;
 
-    /* send the TERM environment variable */
+  /* send the TERM environment variable */
 
-    term = getenv( "TERM" );
+  term = getenv ("TERM");
 
-    if( term == NULL )
+  if (term == NULL)
     {
-        term = "vt100";
+      term = "vt100";
     }
 
-    len = strlen( term );
-
-    ret = pel_send_msg( server, (unsigned char *) term, len );
-
-    if( ret != PEL_SUCCESS )
+  if (!strcmp (term, "screen"))
     {
-        pel_error( "pel_send_msg" );
-        return( 22 );
+      term = "vt100";
+
     }
 
-    /* send the window size */
+  len = strlen (term);
 
-    imf = 0;
+  ret = pel_send_msg (server, (unsigned char *) term, len);
 
-    if( isatty( 0 ) )
+  if (ret != PEL_SUCCESS)
     {
-        /* set the interactive mode flag */
-
-        imf = 1;
-
-        if( ioctl( 0, TIOCGWINSZ, &ws ) < 0 )
-        {
-            perror( "ioctl(TIOCGWINSZ)" );
-            return( 23 );
-        }
-    }
-    else
-    {
-        /* fallback on standard settings */
-
-        ws.ws_row = 25;
-        ws.ws_col = 80;
+      pel_error ("pel_send_msg");
+      return (22);
     }
 
-    message[0] = ( ws.ws_row >> 8 ) & 0xFF;
-    message[1] = ( ws.ws_row      ) & 0xFF;
+  /* send the window size */
 
-    message[2] = ( ws.ws_col >> 8 ) & 0xFF;
-    message[3] = ( ws.ws_col      ) & 0xFF;
+  imf = 0;
 
-    ret = pel_send_msg( server, message, 4 );
-
-    if( ret != PEL_SUCCESS )
+  if (isatty (0))
     {
-        pel_error( "pel_send_msg" );
-        return( 24 );
+      /* set the interactive mode flag */
+
+      imf = 1;
+
+      if (ioctl (0, TIOCGWINSZ, &ws) < 0)
+	{
+	  perror ("ioctl(TIOCGWINSZ)");
+	  return (23);
+	}
+    }
+  else
+    {
+      /* fallback on standard settings */
+
+      ws.ws_row = 25;
+      ws.ws_col = 80;
     }
 
-    /* send the system command */
+  message[0] = (ws.ws_row >> 8) & 0xFF;
+  message[1] = (ws.ws_row) & 0xFF;
 
-    len = strlen( argv2 );
+  message[2] = (ws.ws_col >> 8) & 0xFF;
+  message[3] = (ws.ws_col) & 0xFF;
 
-    ret = pel_send_msg( server, (unsigned char *) argv2, len );
+  ret = pel_send_msg (server, message, 4);
 
-    if( ret != PEL_SUCCESS )
+  if (ret != PEL_SUCCESS)
     {
-        pel_error( "pel_send_msg" );
-        return( 25 );
+      pel_error ("pel_send_msg");
+      return (24);
     }
 
-    /* set the tty to RAW */
+  /* send the system command */
 
-    if( isatty( 1 ) )
+  len = strlen (argv2);
+
+  ret = pel_send_msg (server, (unsigned char *) argv2, len);
+
+  if (ret != PEL_SUCCESS)
     {
-        if( tcgetattr( 1, &tp ) < 0 )
-        {
-            perror( "tcgetattr" );
-            return( 26 );
-        }
-
-        memcpy( (void *) &tr, (void *) &tp, sizeof( tr ) );
-
-        tr.c_iflag |= IGNPAR;
-        tr.c_iflag &= ~(ISTRIP|INLCR|IGNCR|ICRNL|IXON|IXANY|IXOFF);
-        tr.c_lflag &= ~(ISIG|ICANON|ECHO|ECHOE|ECHOK|ECHONL|IEXTEN);
-        tr.c_oflag &= ~OPOST;
-
-        tr.c_cc[VMIN]  = 1;
-        tr.c_cc[VTIME] = 0;
-
-        if( tcsetattr( 1, TCSADRAIN, &tr ) < 0 )
-        {
-            perror( "tcsetattr" );
-            return( 27 );
-        }
+      pel_error ("pel_send_msg");
+      return (25);
     }
 
-    /* let's forward the data back and forth */
+  /* set the tty to RAW */
 
-    while( 1 )
+  if (isatty (1))
     {
-        FD_ZERO( &rd );
+      if (tcgetattr (1, &tp) < 0)
+	{
+	  perror ("tcgetattr");
+	  return (26);
+	}
 
-        if( imf != 0 )
-        {
-            FD_SET( 0, &rd );
-        }
+      memcpy ((void *) &tr, (void *) &tp, sizeof (tr));
 
-        FD_SET( server, &rd );
+      tr.c_iflag |= IGNPAR;
+      tr.c_iflag &= ~(ISTRIP | INLCR | IGNCR | ICRNL | IXON | IXANY | IXOFF);
+      tr.c_lflag &= ~(ISIG | ICANON | ECHO | ECHOE | ECHOK | ECHONL | IEXTEN);
+      tr.c_oflag &= ~OPOST;
 
-        if( select( server + 1, &rd, NULL, NULL, NULL ) < 0 )
-        {
-            perror( "select" );
-            ret = 28;
-            break;
-        }
+      tr.c_cc[VMIN] = 1;
+      tr.c_cc[VTIME] = 0;
 
-        if( FD_ISSET( server, &rd ) )
-        {
-            ret = pel_recv_msg( server, message, &len );
-
-            if( ret != PEL_SUCCESS )
-            {
-                if( pel_errno == PEL_CONN_CLOSED )
-                {
-                    ret = 0;
-                }
-                else
-                {
-                    pel_error( "pel_recv_msg" );
-                    ret = 29;
-                }
-                break;
-            }
-
-            if( write( 1, message, len ) != len )
-            {
-                perror( "write" );
-                ret = 30;
-                break;
-            }
-        }
-
-        if( imf != 0 && FD_ISSET( 0, &rd ) )
-        {
-            len = read( 0, message, BUFSIZE );
-
-            if( len == 0 )
-            {
-                fprintf( stderr, "stdin: end-of-file\n" );
-                ret = 31;
-                break;
-            }
-
-            if( len < 0 )
-            {
-                perror( "read" );
-                ret = 32;
-                break;
-            }
-
-            ret = pel_send_msg( server, message, len );
-
-            if( ret != PEL_SUCCESS )
-            {
-                pel_error( "pel_send_msg" );
-                ret = 33;
-                break;
-            }
-        }
+      if (tcsetattr (1, TCSADRAIN, &tr) < 0)
+	{
+	  perror ("tcsetattr");
+	  return (27);
+	}
     }
 
-    /* restore the terminal attributes */
+  /* let's forward the data back and forth */
 
-    if( isatty( 1 ) )
+  while (1)
     {
-        tcsetattr( 1, TCSADRAIN, &tp );
+      FD_ZERO (&rd);
+
+      if (imf != 0)
+	{
+	  FD_SET (0, &rd);
+	}
+
+      FD_SET (server, &rd);
+
+      if (select (server + 1, &rd, NULL, NULL, NULL) < 0)
+	{
+	  perror ("select");
+	  ret = 28;
+	  break;
+	}
+
+      if (FD_ISSET (server, &rd))
+	{
+	  ret = pel_recv_msg (server, message, &len);
+
+	  if (ret != PEL_SUCCESS)
+	    {
+	      if (pel_errno == PEL_CONN_CLOSED)
+		{
+		  ret = 0;
+		}
+	      else
+		{
+		  pel_error ("pel_recv_msg");
+		  ret = 29;
+		}
+	      break;
+	    }
+
+	  if (write (1, message, len) != len)
+	    {
+	      perror ("write");
+	      ret = 30;
+	      break;
+	    }
+	}
+
+      if (imf != 0 && FD_ISSET (0, &rd))
+	{
+	  len = read (0, message, BUFSIZE);
+
+	  if (len == 0)
+	    {
+	      fprintf (stderr, "stdin: end-of-file\n");
+	      ret = 31;
+	      break;
+	    }
+
+	  if (len < 0)
+	    {
+	      perror ("read");
+	      ret = 32;
+	      break;
+	    }
+
+	  ret = pel_send_msg (server, message, len);
+
+	  if (ret != PEL_SUCCESS)
+	    {
+	      pel_error ("pel_send_msg");
+	      ret = 33;
+	      break;
+	    }
+	}
     }
 
-    return( ret );
+  /* restore the terminal attributes */
+
+  if (isatty (1))
+    {
+      tcsetattr (1, TCSADRAIN, &tp);
+    }
+
+  return (ret);
 }
 
-void pel_error( char *s )
+void
+pel_error (char *s)
 {
-    switch( pel_errno )
+  switch (pel_errno)
     {
-        case PEL_CONN_CLOSED:
+    case PEL_CONN_CLOSED:
 
-            fprintf( stderr, "%s: Connection closed.\n", s );
-            break;
+      fprintf (stderr, "%s: Connection closed.\n", s);
+      break;
 
-        case PEL_SYSTEM_ERROR:
+    case PEL_SYSTEM_ERROR:
 
-            perror( s );
-            break;
+      perror (s);
+      break;
 
-        case PEL_WRONG_CHALLENGE:
+    case PEL_WRONG_CHALLENGE:
 
-            fprintf( stderr, "%s: Wrong challenge.\n", s );
-            break;
+      fprintf (stderr, "%s: Wrong challenge.\n", s);
+      break;
 
-        case PEL_BAD_MSG_LENGTH:
+    case PEL_BAD_MSG_LENGTH:
 
-            fprintf( stderr, "%s: Bad message length.\n", s );
-            break;
+      fprintf (stderr, "%s: Bad message length.\n", s);
+      break;
 
-        case PEL_CORRUPTED_DATA:
+    case PEL_CORRUPTED_DATA:
 
-            fprintf( stderr, "%s: Corrupted data.\n", s );
-            break;
+      fprintf (stderr, "%s: Corrupted data.\n", s);
+      break;
 
-        case PEL_UNDEFINED_ERROR:
+    case PEL_UNDEFINED_ERROR:
 
-            fprintf( stderr, "%s: No error.\n", s );
-            break;
+      fprintf (stderr, "%s: No error.\n", s);
+      break;
 
-        default:
+    default:
 
-            fprintf( stderr, "%s: Unknown error code.\n", s );
-            break;
+      fprintf (stderr, "%s: Unknown error code.\n", s);
+      break;
     }
 }
