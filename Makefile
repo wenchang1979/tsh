@@ -25,6 +25,13 @@ linux:
 	gcc -O -W -Wall -o tshd $(SERVER_OBJ) -lutil -DLINUX
 	strip tsh tshd
 
+linux-clang:
+	clang -O -W -Wall -o tsh  $(CLIENT_OBJ)
+	clang -O -W -Wall -o tshd $(SERVER_OBJ) -lutil -DLINUX
+	strip tsh tshd
+
+
+
 freebsd:
 	gcc -O -W -Wall -o tsh  $(CLIENT_OBJ)
 	gcc -O -W -Wall -o tshd $(SERVER_OBJ) -lutil -DFREEBSD

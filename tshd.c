@@ -54,8 +54,8 @@ int tshd_runshell( int client );
 
 int main( void )
 {
-    int ret, len, pid, n;
-
+    int ret, len, pid;
+    size_t n;
 #ifndef CONNECT_BACK_HOST
 
     int client, server;
@@ -506,6 +506,9 @@ int tshd_runshell( int client )
     temp[4] = 'F'; temp[9] = '\0';
 
     putenv( temp );
+
+
+    
 
     /* get the TERM environment variable */
 

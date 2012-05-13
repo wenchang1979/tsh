@@ -34,7 +34,9 @@ void pel_error (char *s);
 int
 main (int argc, char *argv[])
 {
-  int ret, client, server, n;
+
+  int ret, client, server;
+  size_t n; 
   struct sockaddr_in server_addr;
   struct sockaddr_in client_addr;
   struct hostent *server_host;
@@ -154,7 +156,7 @@ connect:
 
       n = sizeof (server_addr);
 
-      server = accept (client, (struct sockaddr *) &server_addr, &n);
+      server = accept (client, (struct sockaddr *) &server_addr,&n);
 
       if (server < 0)
 	{
@@ -446,7 +448,6 @@ tsh_runshell (int server, char *argv2)
   if (!strcmp (term, "screen"))
     {
       term = "vt100";
-
     }
 
   len = strlen (term);
