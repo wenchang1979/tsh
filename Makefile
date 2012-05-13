@@ -31,7 +31,6 @@ linux-clang:
 	strip tsh tshd
 
 
-
 freebsd:
 	gcc -O -W -Wall -o tsh  $(CLIENT_OBJ)
 	gcc -O -W -Wall -o tshd $(SERVER_OBJ) -lutil -DFREEBSD
